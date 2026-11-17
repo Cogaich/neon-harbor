@@ -31,7 +31,7 @@ export const CAR = {
   reverseAccel: 320,
   maxSpeed: 565,
   maxReverse: 185,
-  turnRate: 2.7,
+  turnRate: 4.0,
   grip: 0.94,
 };
 
@@ -47,7 +47,7 @@ export const POLICE = {
   turnRate: 2.9,
   health: 60,
   ramDamage: 10,
-  ramCooldown: 0.9,
+  ramCooldown: 1.6,
   spawnInterval: 2.4,
   maxActive: 4,
 };
@@ -59,6 +59,27 @@ export const WANTED = {
   stealStars: 1,
   hitPedStars: 1,
   killCopStars: 1,
+};
+
+/** Roadblocks: how the police wall off the city once the heat is high. */
+export const ROADBLOCK = {
+  /** Blocks only appear at this wanted level and above. */
+  minWanted: 4,
+  /** How many blocks the police hold at 4 stars, and at 5. */
+  maxAtFour: 2,
+  maxAtFive: 3,
+  /** How far ahead of the player, along the road, a fresh block is set. */
+  spawnAhead: 620,
+  /** A block is never set closer to the player than this. */
+  minSpawnGap: 280,
+  /** A block further than this from the player is moved back into the hunt. */
+  repositionDist: 1150,
+  /** Seconds between roadblock maintenance passes. */
+  maintainInterval: 2.0,
+  /** Hit a block faster than this and it breaks apart; slower and you stall. */
+  smashSpeed: 320,
+  /** Half the width of the blocked stretch, in world units. */
+  blockHalf: 48,
 };
 
 export const GUN = {
@@ -110,9 +131,10 @@ export const PALETTE = {
 export const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 
 /**
- * The story, in five jobs. Each job has steps; a step is done by reaching its
- * marker (on foot or in a car, per `mode`), except the getaway job, which is
- * done by shaking the wanted level back to zero.
+ * The story, in seven jobs. A step is done by reaching its marker (on foot
+ * or in a car, per `mode`), except `lose-cops` (shake the wanted level back
+ * to zero) and `timed` (reach the marker before the clock runs out — too
+ * slow and the job restarts from its first step).
  */
 export const MISSIONS = [
   {
@@ -169,6 +191,30 @@ export const MISSIONS = [
       { kind: 'reach', mode: 'any', x: 2800, y: 350, r: 100, label: 'Reach the penthouse with the ledger' },
     ],
   },
+  {
+    id: 'clock',
+    title: 'Job 6 — The Clock Run',
+    giver: 'Marlo',
+    text: 'A buyer is waiting at the east pier with cash in hand. Grab the package from the garage, then run it to the pier before the clock hits zero — the tide waits for no one.',
+    reward: 800,
+    steps: [
+      { kind: 'reach', mode: 'any', x: 1000, y: 350, r: 90, label: 'Pick up the package at the garage' },
+      { kind: 'timed', mode: 'car', x: 2900, y: 2280, r: 100, seconds: 45, label: 'Deliver to the east pier — beat the clock' },
+    ],
+  },
+  {
+    id: 'last-getaway',
+    title: 'Job 7 — The Last Getaway',
+    giver: 'Marlo',
+    text: 'One last ledger, one last run. Four stars, roadblocks on every avenue, and the whole city watching. Grab the ledger, shake the heat, and meet me at the park.',
+    reward: 1500,
+    wantedOnStart: 4,
+    steps: [
+      { kind: 'reach', mode: 'any', x: 2800, y: 350, r: 100, label: 'Grab the ledger at the penthouse' },
+      { kind: 'lose-cops', label: 'Lose the cops — get your wanted level to zero' },
+      { kind: 'reach', mode: 'any', x: 1300, y: 1025, r: 100, label: 'Meet Marlo at the park — you made it' },
+    ],
+  },
 ];
 
 export const STORY_INTRO =
@@ -178,5 +224,6 @@ export const STORY_INTRO =
 export const HOSPITAL = { x: 400, y: 1700 };
 export const GARAGE = { x: 1000, y: 350 };
 export const PIER = { x: 2200, y: 2290 };
+export const EAST_PIER = { x: 2900, y: 2280 };
 export const PLAZA = { x: 1300, y: 1025 };
 export const PENTHOUSE = { x: 2800, y: 350 };

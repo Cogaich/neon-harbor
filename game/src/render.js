@@ -288,6 +288,25 @@ export function createRenderer(canvas) {
     context.fillText(label, x, y - 46);
   }
 
+  /** A roadblock: two cruisers parked sideways across the road, striped barrier between them. */
+  function drawRoadblock(block, time) {
+    const perp = block.roadAngle + Math.PI / 2;
+    const px = Math.cos(perp);
+    const py = Math.sin(perp);
+    for (const side of [-1, 1]) {
+      drawCar(block.x + px * 40 * side, block.y + py * 40 * side, perp, PALETTE.policeCar, true, time, false);
+    }
+    // Striped barrier plank across the gap between the cruisers.
+    context.save();
+    context.translate(block.x, block.y);
+    context.rotate(perp);
+    for (let i = -4; i <= 4; i += 1) {
+      context.fillStyle = i % 2 === 0 ? '#ffb300' : '#212121';
+      context.fillRect(i * 9 - 4, -7, 9, 14);
+    }
+    context.restore();
+  }
+
   function drawEntities(state, roadXY) {
     // Pickups.
     for (const item of state.pickups) {
@@ -312,9 +331,9 @@ export function createRenderer(canvas) {
       }
     }
 
-    // Mission marker.
+    // Mission marker (only steps that point at a place have one).
     const mission = state._mission;
-    if (mission && mission.step) {
+    if (mission && mission.step && Number.isFinite(mission.step.x)) {
       drawMarker(mission.step.x, mission.step.y, state.time, mission.step.label);
     }
 
@@ -335,6 +354,11 @@ export function createRenderer(canvas) {
     // Police.
     for (const cop of state.police) {
       drawCar(cop.x, cop.y, cop.angle, PALETTE.policeCar, true, state.time, cop.disabled);
+    }
+
+    // Roadblocks.
+    for (const block of state.roadblocks) {
+      drawRoadblock(block, state.time);
     }
 
     // Player car or player on foot.
@@ -444,6 +468,20 @@ export function createRenderer(canvas) {
       context.fillText(label, VIEW.width / 2, 41);
     }
 
+    // Countdown pill while a timed job is running: top-right, under the
+    // wanted stars, so it never collides with the message banner.
+    if (mission && mission.step && mission.step.kind === 'timed' && state.stepDeadline > 0) {
+      const left = Math.max(0, state.stepDeadline - state.time);
+      const label = `⏱ ${Math.ceil(left)}s`;
+      context.font = font(22, true);
+      const w = context.measureText(label).width + 36;
+      context.fillStyle = left < 10 ? 'rgba(180, 20, 20, 0.85)' : 'rgba(12,16,24,0.85)';
+      context.fillRect(VIEW.width - 14 - w, 72, w, 36);
+      context.fillStyle = '#ffffff';
+      context.textAlign = 'center';
+      context.fillText(label, VIEW.width - 14 - w / 2, 98);
+    }
+
     // Message banner.
     if (state.messageT > 0 && state.message) {
       context.font = font(20, true);
@@ -456,7 +494,7 @@ export function createRenderer(canvas) {
     }
 
     // Off-screen mission arrow.
-    if (mission && mission.step) {
+    if (mission && mission.step && Number.isFinite(mission.step.x)) {
       const tx = mission.step.x;
       const ty = mission.step.y;
       const vx0 = cam.x - VIEW.width / 2;
@@ -516,7 +554,7 @@ export function createRenderer(canvas) {
     context.fillStyle = PALETTE.water;
     context.fillRect(mx, my + state.city.waterTop * scale, MINIMAP.w, MINIMAP.h - state.city.waterTop * scale);
     const mission = state._mission;
-    if (mission && mission.step) {
+    if (mission && mission.step && Number.isFinite(mission.step.x)) {
       context.fillStyle = PALETTE.gold;
       context.beginPath();
       context.arc(mx + mission.step.x * scale, my + mission.step.y * scale, 5 + Math.sin(state.time * 4) * 1.5, 0, Math.PI * 2);
@@ -528,6 +566,10 @@ export function createRenderer(canvas) {
       context.beginPath();
       context.arc(mx + cop.x * scale, my + cop.y * scale, 3.5, 0, Math.PI * 2);
       context.fill();
+    }
+    for (const block of state.roadblocks) {
+      context.fillStyle = '#ff1744';
+      context.fillRect(mx + block.x * scale - 3, my + block.y * scale - 3, 6, 6);
     }
     context.fillStyle = PALETTE.player;
     context.beginPath();
@@ -589,7 +631,7 @@ export function createRenderer(canvas) {
         'E — steal / exit a car · R — reload · P — pause · M — mute',
         'Steal cars, run jobs for Rosa and Marlo, dodge the cops.',
       ];
-      if (meta.hasSave) lines.push(`Saved progress: $${meta.cash} · Job ${Math.min(meta.missionIndex + 1, 5)} of 5`);
+      if (meta.hasSave) lines.push(`Saved progress: $${meta.cash} · Job ${Math.min(meta.missionIndex + 1, 7)} of 7`);
       if (meta.bestCash > 0) lines.push(`Best cash: $${meta.bestCash}`);
       drawPanel('NEON HARBOR', lines, 'Press SPACE to play · N for a new game', '#ff5ea8');
       return;
