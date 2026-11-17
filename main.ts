@@ -1,3 +1,9 @@
+// Neon Harbor — submission entrypoint for the gta6-01 bounty.
+// It hands the finished game to the judge: it copies the static game/ files
+// (index.html plus its ES modules, playable offline in a desktop browser)
+// and the screenshots/ captures into the output directory, then writes
+// dossier.json there through the kit's vendored helper, so the dossier
+// describes exactly the game and the four shots the judge will see.
 // A working gta6-01 entry (Node 22, standard library only): the game is this directory's
 // game/ folder, plain static files a desktop browser loads offline (game/index.html and its ES
 // modules, no library and no network request), and the program hands it in. It copies game/ and
